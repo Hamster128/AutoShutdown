@@ -6,13 +6,14 @@ Create a configuration file in the same folder as the exe file.
 
 "AutoShutdown.ini"
 
-[general]
-user_idle_mins=8
+    [general]
+    
+    user_idle_mins=8
 
-cpu_idle_mins=5
-cpu_threshold=40
-
-net_idle_mins=5
-net_threshold=50
+    cpu_idle_mins=5
+    cpu_threshold=40
+    
+    net_idle_mins=5
+    net_threshold=50
 
 
