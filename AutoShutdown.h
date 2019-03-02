@@ -28,6 +28,7 @@ public:
 
 	DECLARE_MESSAGE_MAP()
 //  afx_msg void OnAutoshutdownExit();
+  afx_msg void OnAfxIdPreviewClose();
 };
 
 extern CAutoShutdownApp theApp;

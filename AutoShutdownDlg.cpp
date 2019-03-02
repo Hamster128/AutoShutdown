@@ -51,6 +51,8 @@ BEGIN_MESSAGE_MAP(CAutoShutdownDlg, CDialogEx)
   ON_WM_CTLCOLOR()
 //  ON_WM_SHOWWINDOW()
 ON_BN_CLICKED(IDC_CBARMED, &CAutoShutdownDlg::OnClickedCbarmed)
+ON_COMMAND(ID_AUTOSHUTDOWN_ARMED, &CAutoShutdownDlg::OnAutoshutdownArmed)
+ON_COMMAND(ID_AUTOSHUTDOWN_EXIT32774, &CAutoShutdownDlg::OnAutoshutdownExit32774)
 END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------------------
@@ -76,6 +78,7 @@ BOOL CAutoShutdownDlg::OnInitDialog()
   Log.Format("Start");
 
   cbArmed.SetCheck(true);
+  m_TrayIcon.bArmed = true;
 
   HICON hIcon = ::LoadIcon(AfxGetResourceHandle(), MAKEINTRESOURCE(IDR_MAINFRAME));  // Icon to use
   m_TrayIcon.Create(this, WM_ICON_NOTIFY, "AutoShutdown", hIcon, IDR_MENU1);
@@ -90,6 +93,8 @@ BOOL CAutoShutdownDlg::OnInitDialog()
   brRed = new CBrush(RGB(250, 128, 128));
 
   GetCursorPos(&lastPoint);
+
+  Menu = GetMenu();
 
   // load config
   if (!ini.Open("AutoShutdown.ini"))
@@ -332,4 +337,23 @@ HBRUSH CAutoShutdownDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 //---------------------------------------------------------------------------------------
 void CAutoShutdownDlg::OnClickedCbarmed()
 {
+  m_TrayIcon.bArmed = cbArmed.GetCheck();
 }
+
+//---------------------------------------------------------------------------------------
+void CAutoShutdownDlg::OnAutoshutdownArmed()
+{
+  if (cbArmed.GetCheck())
+    cbArmed.SetCheck(0);
+  else
+    cbArmed.SetCheck(1);
+
+  m_TrayIcon.bArmed = cbArmed.GetCheck();
+}
+
+//---------------------------------------------------------------------------------------
+void CAutoShutdownDlg::OnAutoshutdownExit32774()
+{
+  PostMessage(WM_CLOSE, 0, NULL);
+}
+

@@ -16,6 +16,7 @@
 BEGIN_MESSAGE_MAP(CAutoShutdownApp, CWinApp)
 	ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
 //  ON_COMMAND(ID_AUTOSHUTDOWN_EXIT, &CAutoShutdownApp::OnAutoshutdownExit)
+ON_COMMAND(AFX_ID_PREVIEW_CLOSE, &CAutoShutdownApp::OnAfxIdPreviewClose)
 END_MESSAGE_MAP()
 
 
@@ -107,3 +108,8 @@ BOOL CAutoShutdownApp::InitInstance()
 //{
 //  m_pMainWnd->PostMessageA(WM_CLOSE, 0, NULL);
 //}
+
+
+void CAutoShutdownApp::OnAfxIdPreviewClose()
+{
+}

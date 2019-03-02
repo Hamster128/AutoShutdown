@@ -4,6 +4,23 @@
 
 #pragma once
 
+class CMySystemTray : public CSystemTray
+{
+public:
+
+  bool bArmed;
+
+  virtual void CustomizeMenu(CMenu *m_menu) 
+  {
+    if(bArmed)
+      m_menu->CheckMenuItem(ID_AUTOSHUTDOWN_ARMED, MF_CHECKED | MF_BYCOMMAND);
+    else
+      m_menu->CheckMenuItem(ID_AUTOSHUTDOWN_ARMED, MF_UNCHECKED | MF_BYCOMMAND);
+  }
+
+
+};
+
 // CAutoShutdownDlg-Dialogfeld
 class CAutoShutdownDlg : public CDialogEx
 {
@@ -28,13 +45,14 @@ protected:
 	POINT lastPoint;
 	PDH_HQUERY cpuQuery;
 	PDH_HCOUNTER cpuTotal;
-  CSystemTray m_TrayIcon;
+  CMySystemTray m_TrayIcon;
   CIniLib ini;
   int cdUser, cdCPU, cdNet;
   HBRUSH hbrUser, hbrCPU, hbrNet;
   CBrush *brGreen, *brRed;
   bool bFirstShow;
   CLog Log;
+  CMenu *Menu;
 
 	// Generierte Funktionen für die Meldungstabellen
 	virtual BOOL OnInitDialog();
@@ -57,4 +75,6 @@ public:
 //  virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
   CButton cbArmed;
   afx_msg void OnClickedCbarmed();
+  afx_msg void OnAutoshutdownArmed();
+  afx_msg void OnAutoshutdownExit32774();
 };
