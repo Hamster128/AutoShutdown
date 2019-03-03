@@ -338,6 +338,9 @@ HBRUSH CAutoShutdownDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 void CAutoShutdownDlg::OnClickedCbarmed()
 {
   m_TrayIcon.bArmed = cbArmed.GetCheck();
+
+  if (m_TrayIcon.bArmed) m_TrayIcon.SetIcon(IDR_MAINFRAME);
+  else                   m_TrayIcon.SetIcon(IDI_OFF);
 }
 
 //---------------------------------------------------------------------------------------
@@ -349,6 +352,9 @@ void CAutoShutdownDlg::OnAutoshutdownArmed()
     cbArmed.SetCheck(1);
 
   m_TrayIcon.bArmed = cbArmed.GetCheck();
+
+  if (m_TrayIcon.bArmed) m_TrayIcon.SetIcon(IDR_MAINFRAME);
+  else                   m_TrayIcon.SetIcon(IDI_OFF);
 }
 
 //---------------------------------------------------------------------------------------

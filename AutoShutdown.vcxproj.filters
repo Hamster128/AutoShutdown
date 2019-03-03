@@ -80,5 +80,11 @@
     <Image Include="res\AutoShutdown.ico">
       <Filter>Ressourcendateien</Filter>
     </Image>
+    <Image Include="res\icon1.ico">
+      <Filter>Ressourcendateien</Filter>
+    </Image>
+    <Image Include="res\AutoShutdown_off.ico">
+      <Filter>Ressourcendateien</Filter>
+    </Image>
   </ItemGroup>
 </Project>

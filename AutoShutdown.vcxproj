@@ -229,6 +229,8 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\AutoShutdown.ico" />
+    <Image Include="res\AutoShutdown_off.ico" />
+    <Image Include="res\icon1.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
