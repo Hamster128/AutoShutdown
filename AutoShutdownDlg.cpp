@@ -78,7 +78,6 @@ BOOL CAutoShutdownDlg::OnInitDialog()
   Log.Format("Start");
 
   cbArmed.SetCheck(true);
-  m_TrayIcon.bArmed = true;
 
   HICON hIcon = ::LoadIcon(AfxGetResourceHandle(), MAKEINTRESOURCE(IDR_MAINFRAME));  // Icon to use
   m_TrayIcon.Create(this, WM_ICON_NOTIFY, "AutoShutdown", hIcon, IDR_MENU1);
@@ -337,24 +336,26 @@ HBRUSH CAutoShutdownDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 //---------------------------------------------------------------------------------------
 void CAutoShutdownDlg::OnClickedCbarmed()
 {
-  m_TrayIcon.bArmed = cbArmed.GetCheck();
-
-  if (m_TrayIcon.bArmed) m_TrayIcon.SetIcon(IDR_MAINFRAME);
-  else                   m_TrayIcon.SetIcon(IDI_OFF);
+  if (cbArmed.GetCheck()) m_TrayIcon.SetIcon(IDR_MAINFRAME);
+  else                    m_TrayIcon.SetIcon(IDI_OFF);
+  CustomizeMenu();
 }
 
 //---------------------------------------------------------------------------------------
 void CAutoShutdownDlg::OnAutoshutdownArmed()
 {
   if (cbArmed.GetCheck())
+  {
     cbArmed.SetCheck(0);
+    m_TrayIcon.SetIcon(IDI_OFF);
+  }
   else
+  {
     cbArmed.SetCheck(1);
+    m_TrayIcon.SetIcon(IDR_MAINFRAME);
+  }
 
-  m_TrayIcon.bArmed = cbArmed.GetCheck();
-
-  if (m_TrayIcon.bArmed) m_TrayIcon.SetIcon(IDR_MAINFRAME);
-  else                   m_TrayIcon.SetIcon(IDI_OFF);
+  CustomizeMenu();
 }
 
 //---------------------------------------------------------------------------------------
@@ -363,3 +364,11 @@ void CAutoShutdownDlg::OnAutoshutdownExit32774()
   PostMessage(WM_CLOSE, 0, NULL);
 }
 
+//---------------------------------------------------------------------------------------
+void CAutoShutdownDlg::CustomizeMenu()
+{
+  if (cbArmed.GetCheck())
+    m_TrayIcon.pMenu->CheckMenuItem(ID_AUTOSHUTDOWN_ARMED, MF_CHECKED | MF_BYCOMMAND);
+  else
+    m_TrayIcon.pMenu->CheckMenuItem(ID_AUTOSHUTDOWN_ARMED, MF_UNCHECKED | MF_BYCOMMAND);
+}

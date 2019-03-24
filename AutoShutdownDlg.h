@@ -4,23 +4,6 @@
 
 #pragma once
 
-class CMySystemTray : public CSystemTray
-{
-public:
-
-  bool bArmed;
-
-  virtual void CustomizeMenu(CMenu *m_menu) 
-  {
-    if(bArmed)
-      m_menu->CheckMenuItem(ID_AUTOSHUTDOWN_ARMED, MF_CHECKED | MF_BYCOMMAND);
-    else
-      m_menu->CheckMenuItem(ID_AUTOSHUTDOWN_ARMED, MF_UNCHECKED | MF_BYCOMMAND);
-  }
-
-
-};
-
 // CAutoShutdownDlg-Dialogfeld
 class CAutoShutdownDlg : public CDialogEx
 {
@@ -40,12 +23,13 @@ public:
 // Implementierung
 protected:
   LRESULT OnTrayNotification(WPARAM wParam, LPARAM lParam);
+  void CustomizeMenu();
 
 	HICON m_hIcon;
 	POINT lastPoint;
 	PDH_HQUERY cpuQuery;
 	PDH_HCOUNTER cpuTotal;
-  CMySystemTray m_TrayIcon;
+  CSystemTray m_TrayIcon;
   CIniLib ini;
   int cdUser, cdCPU, cdNet;
   HBRUSH hbrUser, hbrCPU, hbrNet;
