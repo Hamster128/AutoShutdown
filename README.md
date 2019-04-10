@@ -17,3 +17,6 @@ Create a configuration file in the same folder as the exe file.
     net_threshold=50
 
 
+
+Binary download
+https://github.com/Hamster128/AutoShutdown/raw/master/Release/AutoShutdown.exe
