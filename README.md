@@ -19,4 +19,4 @@ Create a configuration file in the same folder as the exe file.
 
 
 binary download
-http://henry-kellner.net/Downloads/AutoShutdown.zip
+http://henry-kellner.net/Download/AutoShutdown.zip
