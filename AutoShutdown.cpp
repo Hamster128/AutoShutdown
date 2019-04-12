@@ -32,15 +32,30 @@ CAutoShutdownApp::CAutoShutdownApp()
 }
 
 
+bool CheckAppIsAlreadyRunning()
+{
+  HANDLE m_hStartEvent = CreateEvent(NULL, TRUE, FALSE, "eventAutoShutdown");
+
+  if (GetLastError() == ERROR_ALREADY_EXISTS)
+  {
+    CloseHandle(m_hStartEvent);
+    return true;
+  }
+
+  return false;
+}
+
 // Das einzige CAutoShutdownApp-Objekt
 
 CAutoShutdownApp theApp;
-
 
 // CAutoShutdownApp-Initialisierung
 
 BOOL CAutoShutdownApp::InitInstance()
 {
+  if (CheckAppIsAlreadyRunning())
+    return FALSE;
+
 	// InitCommonControlsEx() ist für Windows XP erforderlich, wenn ein Anwendungsmanifest
 	// die Verwendung von ComCtl32.dll Version 6 oder höher zum Aktivieren
 	// von visuellen Stilen angibt.  Ansonsten treten beim Erstellen von Fenstern Fehler auf.
