@@ -18,5 +18,5 @@ Create a configuration file in the same folder as the exe file.
 
 
 
-download
-https://github.com/Hamster128/AutoShutdown
+binary download
+http://henry-kellner.net/Downloads/AutoShutdown.zip
