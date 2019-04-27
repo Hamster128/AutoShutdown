@@ -18,6 +18,14 @@
 #define WM_ICON_NOTIFY  WM_APP+10
 
 CString commonDocs__;
+CTime lastKeyStroke_;
+
+//---------------------------------------------------------------------------------------
+LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam)
+{
+  lastKeyStroke_ = CTime::GetCurrentTime();
+  return CallNextHookEx(0, code, wParam, lParam);
+}
 
 //---------------------------------------------------------------------------------------
 // CAutoShutdownDlg-Dialogfeld
@@ -90,6 +98,8 @@ BOOL CAutoShutdownDlg::OnInitDialog()
 
   brGreen = new CBrush(RGB(128, 255, 128));
   brRed = new CBrush(RGB(250, 128, 128));
+
+  HHOOK myHook = SetWindowsHookExA(WH_KEYBOARD, &KeyboardProc, NULL, GetCurrentThreadId());
 
   GetCursorPos(&lastPoint);
 
@@ -191,7 +201,14 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
     }
   }
 
-	cbMouseActive.SetCheck(bMouseActive);
+  // check keyboard
+  CTimeSpan sinceLastKeyStroke = CTime::GetCurrentTime() - lastKeyStroke_;
+
+  if (sinceLastKeyStroke.GetTotalSeconds() < 2)
+    bMouseActive = true;
+
+  cbMouseActive.SetCheck(bMouseActive);
+
 
 	// check cpu usage
 	PDH_FMT_COUNTERVALUE cpuUsage;
