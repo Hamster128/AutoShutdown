@@ -42,11 +42,12 @@ protected:
 	virtual BOOL OnInitDialog();
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
+  bool userIsActive();
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	CButton cbSystemRequired;
-	CButton cbMouseActive;
+//	CButton cbMouseActive;
 	CEdit edCPU;
   CEdit edNetwork;
   int lastNetwork;

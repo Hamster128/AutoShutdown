@@ -18,14 +18,7 @@
 #define WM_ICON_NOTIFY  WM_APP+10
 
 CString commonDocs__;
-CTime lastKeyStroke_;
 
-//---------------------------------------------------------------------------------------
-LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam)
-{
-  lastKeyStroke_ = CTime::GetCurrentTime();
-  return CallNextHookEx(0, code, wParam, lParam);
-}
 
 //---------------------------------------------------------------------------------------
 // CAutoShutdownDlg-Dialogfeld
@@ -40,7 +33,7 @@ void CAutoShutdownDlg::DoDataExchange(CDataExchange* pDX)
 {
   CDialogEx::DoDataExchange(pDX);
   DDX_Control(pDX, IDC_CBSYSTEM_REQUIRED, cbSystemRequired);
-  DDX_Control(pDX, IDC_CBMOUSEACTIVE, cbMouseActive);
+  //  DDX_Control(pDX, IDC_CBMOUSEACTIVE, cbMouseActive);
   DDX_Control(pDX, IDC_EDCPU, edCPU);
   DDX_Control(pDX, IDC_EDNETWORK, edNetwork);
   DDX_Control(pDX, IDC_EDCDUSER, edCdUser);
@@ -98,8 +91,6 @@ BOOL CAutoShutdownDlg::OnInitDialog()
 
   brGreen = new CBrush(RGB(128, 255, 128));
   brRed = new CBrush(RGB(250, 128, 128));
-
-  HHOOK myHook = SetWindowsHookExA(WH_KEYBOARD, &KeyboardProc, NULL, GetCurrentThreadId());
 
   GetCursorPos(&lastPoint);
 
@@ -167,6 +158,17 @@ HCURSOR CAutoShutdownDlg::OnQueryDragIcon()
 }
 
 //---------------------------------------------------------------------------------------
+bool CAutoShutdownDlg::userIsActive()
+{
+  LASTINPUTINFO info;
+  info.cbSize = sizeof(info);
+
+  GetLastInputInfo(&info);
+
+  return (GetTickCount() - info.dwTime) < 1500;
+}
+
+//---------------------------------------------------------------------------------------
 void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
 {
   if (bFirstShow)
@@ -188,27 +190,8 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
 		
 	cbSystemRequired.SetCheck(bSystemRequired);
 
-	// check mouse movements
-	bool bMouseActive = false;
-	POINT actPoint;
-
-  if (GetCursorPos(&actPoint))
-  {
-    if (actPoint.x != lastPoint.x || actPoint.y != lastPoint.y)
-    {
-      lastPoint = actPoint;
-      bMouseActive = true;
-    }
-  }
-
-  // check keyboard
-  CTimeSpan sinceLastKeyStroke = CTime::GetCurrentTime() - lastKeyStroke_;
-
-  if (sinceLastKeyStroke.GetTotalSeconds() < 2)
-    bMouseActive = true;
-
-  cbMouseActive.SetCheck(bMouseActive);
-
+	// check keyboard / mouse
+  bool bUserIsActive = userIsActive();
 
 	// check cpu usage
 	PDH_FMT_COUNTERVALUE cpuUsage;
@@ -258,12 +241,12 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
 
   // check thresholds and timeouts
   hbrUser = *brRed;
-  if (!bMouseActive)
+  if (!bUserIsActive)
   {
+    hbrUser = *brGreen;
+
     if(cdUser)
       cdUser--;
-    else
-      hbrUser = *brGreen;
   }
   else
     cdUser = ini.EntryInt("general", "user_idle_mins", 5) * 60;
@@ -275,10 +258,10 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
   hbrCPU = *brRed;
   if (cpuUsage.doubleValue < ini.EntryInt("general", "cpu_threshold", 40))
   {
+    hbrCPU = *brGreen;
+
     if (cdCPU)
       cdCPU--;
-    else
-      hbrCPU = *brGreen;
   }
   else
     cdCPU = ini.EntryInt("general", "cpu_idle_mins", 5) * 60;
@@ -290,10 +273,10 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
   hbrNet = *brRed;
   if (networkDiff < ini.EntryInt("general", "net_threshold", 20))
   {
+    hbrNet = *brGreen;
+
     if (cdNet)
       cdNet--;
-    else
-      hbrNet = *brGreen;
   }
   else
     cdNet = ini.EntryInt("general", "net_idle_mins", 5) * 60;
