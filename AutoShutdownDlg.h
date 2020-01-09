@@ -3,6 +3,9 @@
 //
 
 #pragma once
+#include <vector>    
+#include <algorithm>  // sort()   
+using namespace std;
 
 // CAutoShutdownDlg-Dialogfeld
 class CAutoShutdownDlg : public CDialogEx
@@ -24,6 +27,7 @@ public:
 protected:
   LRESULT OnTrayNotification(WPARAM wParam, LPARAM lParam);
   void CustomizeMenu();
+  double Median(vector<int> scores);
 
 	HICON m_hIcon;
 	POINT lastPoint;
@@ -31,12 +35,13 @@ protected:
 	PDH_HCOUNTER cpuTotal;
   CSystemTray m_TrayIcon;
   CIniLib ini;
-  int cdUser, cdCPU, cdNet;
-  HBRUSH hbrUser, hbrCPU, hbrNet;
-  CBrush *brGreen, *brRed;
+  int cdUser, cdCPU, cdNet, cdSystem;
+  HBRUSH hbrUser, hbrCPU, hbrNet, hbrSystem;
+  CBrush *brGreen, *brOrange, *brRed;
   bool bFirstShow;
   CLog Log;
   CMenu *Menu;
+  vector<int> cpuData, netData;
 
 	// Generierte Funktionen für die Meldungstabellen
 	virtual BOOL OnInitDialog();
@@ -62,4 +67,7 @@ public:
   afx_msg void OnClickedCbarmed();
   afx_msg void OnAutoshutdownArmed();
   afx_msg void OnAutoshutdownExit32774();
+  afx_msg void OnBnClickedCbsystemRequired();
+  afx_msg void OnEnChangeEdcduser2();
+  CEdit edCdSystem;
 };

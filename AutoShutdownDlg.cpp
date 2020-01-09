@@ -40,6 +40,7 @@ void CAutoShutdownDlg::DoDataExchange(CDataExchange* pDX)
   DDX_Control(pDX, IDC_EDCDNET, edCdNetwork);
   DDX_Control(pDX, IDC_EDCDCPU, edCdCPU);
   DDX_Control(pDX, IDC_CBARMED, cbArmed);
+  DDX_Control(pDX, IDC_EDCDSYSTEM, edCdSystem);
 }
 
 //---------------------------------------------------------------------------------------
@@ -54,6 +55,7 @@ BEGIN_MESSAGE_MAP(CAutoShutdownDlg, CDialogEx)
 ON_BN_CLICKED(IDC_CBARMED, &CAutoShutdownDlg::OnClickedCbarmed)
 ON_COMMAND(ID_AUTOSHUTDOWN_ARMED, &CAutoShutdownDlg::OnAutoshutdownArmed)
 ON_COMMAND(ID_AUTOSHUTDOWN_EXIT32774, &CAutoShutdownDlg::OnAutoshutdownExit32774)
+ON_BN_CLICKED(IDC_CBSYSTEM_REQUIRED, &CAutoShutdownDlg::OnBnClickedCbsystemRequired)
 END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------------------
@@ -89,8 +91,9 @@ BOOL CAutoShutdownDlg::OnInitDialog()
 	PdhAddEnglishCounter(cpuQuery, "\\Processor(_Total)\\% Processor Time", NULL, &cpuTotal);
 	PdhCollectQueryData(cpuQuery);
 
-  brGreen = new CBrush(RGB(128, 255, 128));
-  brRed = new CBrush(RGB(250, 128, 128));
+  brGreen = new CBrush(RGB(60, 240, 60));
+  brOrange = new CBrush(RGB(255, 160, 0));
+  brRed = new CBrush(RGB(240, 40, 40));
 
   GetCursorPos(&lastPoint);
 
@@ -103,9 +106,10 @@ BOOL CAutoShutdownDlg::OnInitDialog()
     exit(0);
   }
 
-  cdUser = ini.EntryInt("general", "user_idle_mins", 5) * 60;
-  cdCPU  = ini.EntryInt("general", "cpu_idle_mins", 5) * 60;
-  cdNet  = ini.EntryInt("general", "net_idle_mins", 5) * 60;
+  cdUser   = ini.EntryDouble("general", "user_idle_mins", 5) * 60;
+  cdCPU    = ini.EntryDouble("general", "cpu_idle_mins", 5) * 60;
+  cdNet    = ini.EntryDouble("general", "net_idle_mins", 5) * 60;
+  cdSystem = ini.EntryDouble("general", "system_idle_mins", 1) * 60;
 
 	// start timer
 	SetTimer(0, 1, NULL);
@@ -169,6 +173,29 @@ bool CAutoShutdownDlg::userIsActive()
 }
 
 //---------------------------------------------------------------------------------------
+double CAutoShutdownDlg::Median(vector<int> scores)
+{
+  size_t size = scores.size();
+
+  if (size == 0)
+  {
+    return 0;  // Undefined, really.
+  }
+  else
+  {
+    sort(scores.begin(), scores.end());
+    if (size % 2 == 0)
+    {
+      return (scores[size / 2 - 1] + scores[size / 2]) / 2;
+    }
+    else
+    {
+      return scores[size / 2];
+    }
+  }
+}
+
+//---------------------------------------------------------------------------------------
 void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
 {
   if (bFirstShow)
@@ -198,6 +225,13 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
 
 	PdhCollectQueryData(cpuQuery);
 	PdhGetFormattedCounterValue(cpuTotal, PDH_FMT_DOUBLE, NULL, &cpuUsage);
+
+  cpuData.push_back(cpuUsage.doubleValue);
+
+  if(cpuData.size() > ini.EntryInt("general", "cpu_median_size", 10))
+    cpuData.erase(cpuData.begin());
+
+  cpuUsage.doubleValue = Median(cpuData);
 
 	CString csTxt;
   csTxt.Format("%.0f", cpuUsage.doubleValue);
@@ -236,6 +270,13 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
 
   lastNetwork = network;
 
+  netData.push_back(networkDiff);
+
+  if (netData.size() > ini.EntryInt("general", "net_median_size", 10))
+    netData.erase(netData.begin());
+
+  networkDiff = Median(netData);
+
   csTxt.Format("%d", networkDiff);
   edNetwork.SetWindowText(csTxt);
 
@@ -243,28 +284,52 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
   hbrUser = *brRed;
   if (!bUserIsActive)
   {
-    hbrUser = *brGreen;
+    hbrUser = *brOrange;
 
-    if(cdUser)
+    if (cdUser)
       cdUser--;
+    
+    if (!cdUser)
+      hbrUser = *brGreen;
   }
   else
-    cdUser = ini.EntryInt("general", "user_idle_mins", 5) * 60;
+    cdUser = ini.EntryDouble("general", "user_idle_mins", 5) * 60;
 
   csTxt.Format("%d", cdUser);
   edCdUser.SetWindowText(csTxt);
 
 
+  hbrSystem = *brRed;
+  if (!bSystemRequired)
+  {
+    hbrSystem = *brOrange;
+
+    if (cdSystem)
+      cdSystem--;
+
+    if (!cdSystem)
+      hbrSystem = *brGreen;
+  }
+  else
+    cdSystem = ini.EntryDouble("general", "system_idle_mins", 1) * 60;
+
+  csTxt.Format("%d", cdSystem);
+  edCdSystem.SetWindowText(csTxt);
+
+
   hbrCPU = *brRed;
   if (cpuUsage.doubleValue < ini.EntryInt("general", "cpu_threshold", 40))
   {
-    hbrCPU = *brGreen;
+    hbrCPU = *brOrange;
 
     if (cdCPU)
       cdCPU--;
+
+    if (!cdCPU)
+      hbrCPU = *brGreen;
   }
   else
-    cdCPU = ini.EntryInt("general", "cpu_idle_mins", 5) * 60;
+    cdCPU = ini.EntryDouble("general", "cpu_idle_mins", 5) * 60;
 
   csTxt.Format("%d", cdCPU);
   edCdCPU.SetWindowText(csTxt);
@@ -273,25 +338,29 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
   hbrNet = *brRed;
   if (networkDiff < ini.EntryInt("general", "net_threshold", 20))
   {
-    hbrNet = *brGreen;
+    hbrNet = *brOrange;
 
     if (cdNet)
       cdNet--;
+
+    if (!cdNet)
+      hbrNet = *brGreen;
   }
   else
-    cdNet = ini.EntryInt("general", "net_idle_mins", 5) * 60;
+    cdNet = ini.EntryDouble("general", "net_idle_mins", 5) * 60;
 
   csTxt.Format("%d", cdNet);
   edCdNetwork.SetWindowText(csTxt);
 
   // check total idle
-  if (cdUser || cdCPU || cdNet || bSystemRequired)
+  if (cdUser || cdCPU || cdNet || cdSystem)
     return;
 
   // execute sleep
-  cdUser = ini.EntryInt("general", "user_idle_mins", 5) * 60;
-  cdCPU = ini.EntryInt("general", "cpu_idle_mins", 5) * 60;
-  cdNet = ini.EntryInt("general", "net_idle_mins", 5) * 60;
+  cdUser   = ini.EntryDouble("general", "user_idle_mins", 5) * 60;
+  cdCPU    = ini.EntryDouble("general", "cpu_idle_mins", 5) * 60;
+  cdNet    = ini.EntryDouble("general", "net_idle_mins", 5) * 60;
+  cdSystem = ini.EntryDouble("general", "system_idle_mins", 1) * 60;
 
   if (!cbArmed.GetCheck())
     return;
@@ -328,6 +397,9 @@ HBRUSH CAutoShutdownDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 
   if ((CTLCOLOR_EDIT == nCtlColor) && (IDC_EDCDNET == pWnd->GetDlgCtrlID()))
     return hbrNet;
+
+  if ((CTLCOLOR_EDIT == nCtlColor) && (IDC_EDCDSYSTEM == pWnd->GetDlgCtrlID()))
+    return hbrSystem;
 
   return hbr;
 }
@@ -371,4 +443,21 @@ void CAutoShutdownDlg::CustomizeMenu()
     m_TrayIcon.pMenu->CheckMenuItem(ID_AUTOSHUTDOWN_ARMED, MF_CHECKED | MF_BYCOMMAND);
   else
     m_TrayIcon.pMenu->CheckMenuItem(ID_AUTOSHUTDOWN_ARMED, MF_UNCHECKED | MF_BYCOMMAND);
+}
+
+
+void CAutoShutdownDlg::OnBnClickedCbsystemRequired()
+{
+  // TODO: Add your control notification handler code here
+}
+
+
+void CAutoShutdownDlg::OnEnChangeEdcduser2()
+{
+  // TODO:  If this is a RICHEDIT control, the control will not
+  // send this notification unless you override the CDialogEx::OnInitDialog()
+  // function and call CRichEditCtrl().SetEventMask()
+  // with the ENM_CHANGE flag ORed into the mask.
+
+  // TODO:  Add your control notification handler code here
 }

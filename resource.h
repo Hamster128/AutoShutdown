@@ -16,6 +16,9 @@
 #define IDC_EDCDCPU                     1006
 #define IDC_EDCDNET                     1007
 #define IDC_EDCDUSER                    1008
+#define IDC_EDCDSYSTEM                  1009
+#define IDC_SPLIT1                      1010
+#define IDC_MFCBUTTON1                  1011
 #define ID_AUTOSHUTDOWN_EXIT            32771
 #define ID_AUTOSHUTDOWN                 32772
 #define ID_AUTOSHUTDOWN_ARMED           32773
@@ -27,7 +30,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        132
 #define _APS_NEXT_COMMAND_VALUE         32775
-#define _APS_NEXT_CONTROL_VALUE         1005
+#define _APS_NEXT_CONTROL_VALUE         1012
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
