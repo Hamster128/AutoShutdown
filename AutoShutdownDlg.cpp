@@ -41,6 +41,8 @@ void CAutoShutdownDlg::DoDataExchange(CDataExchange* pDX)
   DDX_Control(pDX, IDC_EDCDCPU, edCdCPU);
   DDX_Control(pDX, IDC_CBARMED, cbArmed);
   DDX_Control(pDX, IDC_EDCDSYSTEM, edCdSystem);
+  DDX_Control(pDX, IDC_EDFOUNDWINDOW, edFoundWindow);
+  DDX_Control(pDX, IDC_CBFOUNDWINDOW, cbFoundWindow);
 }
 
 //---------------------------------------------------------------------------------------
@@ -55,7 +57,6 @@ BEGIN_MESSAGE_MAP(CAutoShutdownDlg, CDialogEx)
 ON_BN_CLICKED(IDC_CBARMED, &CAutoShutdownDlg::OnClickedCbarmed)
 ON_COMMAND(ID_AUTOSHUTDOWN_ARMED, &CAutoShutdownDlg::OnAutoshutdownArmed)
 ON_COMMAND(ID_AUTOSHUTDOWN_EXIT32774, &CAutoShutdownDlg::OnAutoshutdownExit32774)
-ON_BN_CLICKED(IDC_CBSYSTEM_REQUIRED, &CAutoShutdownDlg::OnBnClickedCbsystemRequired)
 END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------------------
@@ -196,6 +197,99 @@ double CAutoShutdownDlg::Median(vector<int> scores)
 }
 
 //---------------------------------------------------------------------------------------
+double CAutoShutdownDlg::Average(vector<int> scores)
+{
+  size_t size = scores.size();
+
+  if (size == 0)
+  {
+    return 0;  // Undefined, really.
+  }
+  else
+  {
+    double total = 0;
+
+    for (int i = 0; i < size; i++)
+      total += scores[i];
+      
+    return total / size;
+  }
+}
+
+//------------------------------------------------------------------------------------------
+void CAutoShutdownDlg::CheckWindow(HWND hwnd)
+{
+  if (!::IsWindowVisible(hwnd))
+    return;
+
+  if (::IsIconic(hwnd))
+    return;
+
+  WINDOWPLACEMENT wp;
+  wp.length = sizeof(wp);
+
+  if (::GetWindowPlacement(hwnd, &wp) && wp.showCmd == SW_HIDE)
+    return;
+
+  if (!wp.rcNormalPosition.right)
+    return;
+
+  char title[1024];
+  CString csTitle;
+  ::GetWindowText(hwnd, title, sizeof(title));
+  csTitle = title;
+
+  CString csEntry, csData;
+
+  ini.SetSection("windows");
+
+  while (ini.GetNextEntry(csEntry, csData))
+  {
+    if (csEntry == "is" && csTitle == csData)
+    {
+      bFoundWindow = true;
+      return;
+    }
+
+    if (csEntry == "contains" && csTitle.Find(csData) > -1)
+    {
+      bFoundWindow = true;
+      return;
+    }
+  }
+
+  ini.SetSection("windows_screen_required");
+
+  while (ini.GetNextEntry(csEntry, csData))
+  {
+    if (csEntry == "is" && csTitle == csData)
+    {
+      bFoundWindow = true;
+      SetThreadExecutionState(ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
+      return;
+    }
+
+    if (csEntry == "contains" && csTitle.Find(csData) > -1)
+    {
+      bFoundWindow = true;
+      SetThreadExecutionState(ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
+      return;
+    }
+  }
+
+}
+
+//------------------------------------------------------------------------------------------
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
+  CAutoShutdownDlg* self = (CAutoShutdownDlg*)lParam;
+
+  self->CheckWindow(hwnd);
+
+  return !self->bFoundWindow;
+}
+
+//---------------------------------------------------------------------------------------
 void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
 {
   if (bFirstShow)
@@ -256,8 +350,8 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
     if (!pIfRow->InterfaceAndOperStatusFlags.HardwareInterface)
       continue;
 
-    network += pIfRow->OutOctets / 1024;
-    network += pIfRow->InOctets / 1024;
+    network += pIfRow->OutOctets / 1000;
+    network += pIfRow->InOctets / 1000;
 	}
   FreeMibTable(pIfTable);
 
@@ -272,17 +366,23 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
 
   netData.push_back(networkDiff);
 
-  if (netData.size() > ini.EntryInt("general", "net_median_size", 10))
+  if (netData.size() > ini.EntryInt("general", "net_average_size", 10))
     netData.erase(netData.begin());
 
-  networkDiff = Median(netData);
+  networkDiff = Average(netData) * 8;
 
   csTxt.Format("%d", networkDiff);
   edNetwork.SetWindowText(csTxt);
 
+  // check windows
+  bFoundWindow = false;
+  EnumWindows(EnumWindowsProc, (LPARAM)this);
+
+  cbFoundWindow.SetCheck(bFoundWindow);
+
   // check thresholds and timeouts
   hbrUser = *brRed;
-  if (!bUserIsActive)
+  if (!bUserIsActive) 
   {
     hbrUser = *brOrange;
 
@@ -315,6 +415,24 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
 
   csTxt.Format("%d", cdSystem);
   edCdSystem.SetWindowText(csTxt);
+
+
+  hbrNoWindow = *brRed;
+  if (!bFoundWindow)
+  {
+    hbrNoWindow = *brOrange;
+
+    if (cdNoWindow)
+      cdNoWindow--;
+
+    if (!cdNoWindow)
+      hbrNoWindow = *brGreen;
+  }
+  else
+    cdNoWindow = ini.EntryDouble("general", "no_window_found_mins", 0.5) * 60;
+
+  csTxt.Format("%d", cdNoWindow);
+  edFoundWindow.SetWindowText(csTxt);
 
 
   hbrCPU = *brRed;
@@ -353,14 +471,15 @@ void CAutoShutdownDlg::OnTimer(UINT_PTR nIDEvent)
   edCdNetwork.SetWindowText(csTxt);
 
   // check total idle
-  if (cdUser || cdCPU || cdNet || cdSystem)
+  if (cdUser || cdCPU || cdNet || cdSystem || cdNoWindow)
     return;
 
   // execute sleep
-  cdUser   = ini.EntryDouble("general", "user_idle_mins", 5) * 60;
-  cdCPU    = ini.EntryDouble("general", "cpu_idle_mins", 5) * 60;
-  cdNet    = ini.EntryDouble("general", "net_idle_mins", 5) * 60;
-  cdSystem = ini.EntryDouble("general", "system_idle_mins", 1) * 60;
+  cdUser     = ini.EntryDouble("general", "user_idle_mins", 5) * 60;
+  cdCPU      = ini.EntryDouble("general", "cpu_idle_mins", 5) * 60;
+  cdNet      = ini.EntryDouble("general", "net_idle_mins", 5) * 60;
+  cdSystem   = ini.EntryDouble("general", "system_idle_mins", 1) * 60;
+  cdNoWindow = ini.EntryDouble("general", "no_window_found_mins", 0.5) * 60;
 
   if (!cbArmed.GetCheck())
     return;
@@ -400,6 +519,9 @@ HBRUSH CAutoShutdownDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 
   if ((CTLCOLOR_EDIT == nCtlColor) && (IDC_EDCDSYSTEM == pWnd->GetDlgCtrlID()))
     return hbrSystem;
+
+  if ((CTLCOLOR_EDIT == nCtlColor) && (IDC_EDFOUNDWINDOW == pWnd->GetDlgCtrlID()))
+    return hbrNoWindow;
 
   return hbr;
 }
@@ -443,21 +565,4 @@ void CAutoShutdownDlg::CustomizeMenu()
     m_TrayIcon.pMenu->CheckMenuItem(ID_AUTOSHUTDOWN_ARMED, MF_CHECKED | MF_BYCOMMAND);
   else
     m_TrayIcon.pMenu->CheckMenuItem(ID_AUTOSHUTDOWN_ARMED, MF_UNCHECKED | MF_BYCOMMAND);
-}
-
-
-void CAutoShutdownDlg::OnBnClickedCbsystemRequired()
-{
-  // TODO: Add your control notification handler code here
-}
-
-
-void CAutoShutdownDlg::OnEnChangeEdcduser2()
-{
-  // TODO:  If this is a RICHEDIT control, the control will not
-  // send this notification unless you override the CDialogEx::OnInitDialog()
-  // function and call CRichEditCtrl().SetEventMask()
-  // with the ENM_CHANGE flag ORed into the mask.
-
-  // TODO:  Add your control notification handler code here
 }

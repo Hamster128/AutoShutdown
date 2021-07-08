@@ -19,15 +19,18 @@ public:
 	enum { IDD = IDD_AUTOSHUTDOWN_DIALOG };
 #endif
 
-	protected:
+  void CheckWindow(HWND hwnd);
+  bool bFoundWindow;
+
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 
-
 // Implementierung
-protected:
+
   LRESULT OnTrayNotification(WPARAM wParam, LPARAM lParam);
   void CustomizeMenu();
   double Median(vector<int> scores);
+  double Average(vector<int> scores);
 
 	HICON m_hIcon;
 	POINT lastPoint;
@@ -35,8 +38,8 @@ protected:
 	PDH_HCOUNTER cpuTotal;
   CSystemTray m_TrayIcon;
   CIniLib ini;
-  int cdUser, cdCPU, cdNet, cdSystem;
-  HBRUSH hbrUser, hbrCPU, hbrNet, hbrSystem;
+  int cdUser, cdCPU, cdNet, cdSystem, cdNoWindow;
+  HBRUSH hbrUser, hbrCPU, hbrNet, hbrSystem, hbrNoWindow;
   CBrush *brGreen, *brOrange, *brRed;
   bool bFirstShow;
   CLog Log;
@@ -67,7 +70,7 @@ public:
   afx_msg void OnClickedCbarmed();
   afx_msg void OnAutoshutdownArmed();
   afx_msg void OnAutoshutdownExit32774();
-  afx_msg void OnBnClickedCbsystemRequired();
-  afx_msg void OnEnChangeEdcduser2();
   CEdit edCdSystem;
+  CEdit edFoundWindow;
+  CButton cbFoundWindow;
 };

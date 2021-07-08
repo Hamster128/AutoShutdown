@@ -10,6 +10,8 @@
 #define IDC_CHECK1                      1000
 #define IDC_CBARMED                     1000
 #define IDC_CBSYSTEM_REQUIRED           1001
+#define IDC_CBSYSTEM_REQUIRED2          1002
+#define IDC_CBFOUNDWINDOW               1002
 #define IDC_CBMOUSEACTIVE               1003
 #define IDC_EDCPU                       1004
 #define IDC_EDNETWORK                   1005
@@ -18,7 +20,7 @@
 #define IDC_EDCDUSER                    1008
 #define IDC_EDCDSYSTEM                  1009
 #define IDC_SPLIT1                      1010
-#define IDC_MFCBUTTON1                  1011
+#define IDC_EDFOUNDWINDOW               1010
 #define ID_AUTOSHUTDOWN_EXIT            32771
 #define ID_AUTOSHUTDOWN                 32772
 #define ID_AUTOSHUTDOWN_ARMED           32773
