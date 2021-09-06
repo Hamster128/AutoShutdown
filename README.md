@@ -17,3 +17,4 @@ Create a configuration file in the same folder as the exe file.
     net_threshold=50
 
 
+Binary download: https://henry-kellner.net/Download/AutoShutdown.zip
